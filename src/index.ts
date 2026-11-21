@@ -8,6 +8,7 @@ export * from "./render/OurNotesRenderer";
 export * from "./render/ParticleLayer";
 export * from "./render/PerfProbe";
 export * from "./render/SimultaneousLineLayer";
+export * from "./render/visibility";
 export * from "./render/TmpSdfFont";
 export * from "./render/backgroundMedia";
 export * from "./render/noteSkinLayout";

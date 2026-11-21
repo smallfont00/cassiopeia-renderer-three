@@ -8,7 +8,6 @@ export * from "./ParticleLayer";
 export * from "./LiveUrpBloom";
 export * from "./PerfProbe";
 export * from "./SimultaneousLineLayer";
-export * from "./visibility";
 export * from "./stageGeometry";
 export * from "./presentation";
 export * from "@haneoka/cassiopeia-plugin-our-notes";
