@@ -9,6 +9,7 @@ import {
   NormalBlending,
   Object3D,
 } from "three";
+import { visibilityAt, type NoteVisibility } from "./visibility";
 import { OUR_NOTES_LIVE_GEOMETRY } from "@haneoka/cassiopeia-plugin-our-notes";
 import type { RenderSimultaneousLine } from "@haneoka/cassiopeia-plugin-our-notes";
 import { StageProjector } from "./stageGeometry";
@@ -16,6 +17,8 @@ import { StageProjector } from "./stageGeometry";
 /** One ordered draw for LivePairNoteLineView's fixed-height white planes. */
 export class SimultaneousLineLayer {
   readonly group = new Group();
+  /** Practice visibility by distance (visibility.ts); null is the game's own. */
+  visibility: NoteVisibility | null = null;
 
   private readonly projector: StageProjector;
   private readonly layout = new Object3D();
@@ -30,6 +33,8 @@ export class SimultaneousLineLayer {
     blending: NormalBlending,
     side: DoubleSide,
     toneMapped: false,
+    // White, with each line's own alpha in its vertices: practice visibility fades a line with its notes.
+    vertexColors: true,
   });
 
   constructor(projector: StageProjector) {
@@ -40,6 +45,7 @@ export class SimultaneousLineLayer {
     this.group.name = "OurNotesSimultaneousLines";
     this.mesh = new Mesh(new BufferGeometry(), this.material);
     this.mesh.geometry.setAttribute("position", new BufferAttribute(new Float32Array(9), 3));
+    this.mesh.geometry.setAttribute("color", new BufferAttribute(new Float32Array(12).fill(1), 4));
     this.mesh.geometry.setIndex(new BufferAttribute(new Uint32Array([0, 1, 2]), 1));
     this.mesh.geometry.setDrawRange(0, 0);
     this.mesh.renderOrder = OUR_NOTES_LIVE_GEOMETRY.sortingOrders.simultaneousLine;
@@ -70,6 +76,10 @@ export class SimultaneousLineLayer {
         "position",
         new BufferAttribute(new Float32Array(this.capacity * 12), 3).setUsage(StreamDrawUsage),
       );
+      geometry.setAttribute(
+        "color",
+        new BufferAttribute(new Float32Array(this.capacity * 16).fill(1), 4).setUsage(StreamDrawUsage),
+      );
       const indices = new Uint32Array(this.capacity * 6);
       for (let line = 0; line < this.capacity; line++) {
         const vertex = line * 4,
@@ -84,9 +94,12 @@ export class SimultaneousLineLayer {
       geometry.setIndex(new BufferAttribute(indices, 1));
     }
     const positions = this.mesh.geometry.getAttribute("position") as BufferAttribute;
+    const colors = this.mesh.geometry.getAttribute("color") as BufferAttribute;
     let count = 0;
     for (const line of lines ?? []) {
       if (line.visible === false || line.rightCenter <= line.leftCenter) continue;
+      const alpha = visibilityAt(this.visibility, line.approach);
+      if (alpha <= 0.001) continue;
 
       if (line.leftApproach !== undefined || line.rightApproach !== undefined) {
         const leftProgress = this.projector.viewProgress(line.leftApproach ?? line.approach);
@@ -123,6 +136,7 @@ export class SimultaneousLineLayer {
           matrix[1]! * x + matrix[5]! * y + matrix[13]!,
           matrix[2]! * x + matrix[6]! * y + matrix[14]!,
         );
+        colors.setXYZW(count * 4 + vertex, 1, 1, 1, alpha);
       }
       count++;
     }

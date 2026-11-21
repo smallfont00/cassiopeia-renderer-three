@@ -1,4 +1,5 @@
 import { spatialConfiguration, spatialInputSize } from "@haneoka/render-shaders/three";
+import { normalizeNoteVisibility, type NoteVisibility } from "./visibility";
 import type { SpatialConfiguration } from "@haneoka/render-shaders/three";
 import type { NativeIntroAssembly } from "./NativeIntroAssembler";
 import {
@@ -292,6 +293,16 @@ export class OurNotesRenderer implements NativeChartPresentation {
     this.liveBloom.invalidate();
     this.effectCacheActive = false;
     this.lastEffectFrame = -1;
+  }
+
+  /** Practice visibility by distance from the judgement line (visibility.ts): notes, hold ribbons and simultaneous
+   * lines fade out or in with it. Null or anything invalid is the game's own. Effects are not affected. */
+  setNoteVisibility(value: NoteVisibility | null | undefined): void {
+    if (this.disposed) return;
+    const visibility = normalizeNoteVisibility(value);
+    this.notes.visibility = visibility;
+    this.holds.visibility = visibility;
+    this.simultaneousLines.visibility = visibility;
   }
 
   /** Toggle the optional critical/ease-note mark treatment. Disabled by default. */

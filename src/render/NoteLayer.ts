@@ -16,6 +16,7 @@ import {
   PlaneGeometry,
   ShaderMaterial,
 } from "three";
+import { visibilityAt, type NoteVisibility } from "./visibility";
 import type { Raycaster, Texture } from "three";
 import type { NativeNoteHit } from "./presentation";
 import { SpriteAtlas, type SpriteMesh, type SpriteRegion } from "../assets/SpriteAtlas";
@@ -284,6 +285,8 @@ export function resolveEaseNoteMarkPresentation(
 /** Sprite-atlas note renderer using the selected native note skin. */
 export class NoteLayer {
   readonly group = new Group();
+  /** Practice visibility by distance (visibility.ts); null is the game's own. */
+  visibility: NoteVisibility | null = null;
 
   private readonly projector: StageProjector;
   private readonly assets: OurNotesAssetManifest;
@@ -1020,7 +1023,7 @@ export class NoteLayer {
       }
     }
 
-    const alpha = Math.max(0, Math.min(1, note.alpha ?? 1));
+    const alpha = Math.max(0, Math.min(1, note.alpha ?? 1)) * visibilityAt(this.visibility, note.approach);
     if (visual.lastAlpha !== alpha) {
       for (const material of visual.materials) material.opacity = alpha;
       if (visual.arrowGradientMaterial) visual.arrowGradientMaterial.uniforms.uOpacity!.value = alpha;

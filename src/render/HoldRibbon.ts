@@ -18,6 +18,7 @@ import {
   UnsignedByteType,
   Vector4,
 } from "three";
+import { visibilityAt, type NoteVisibility } from "./visibility";
 import type { Camera, Material, Scene, Texture, WebGLRenderer } from "three";
 import {
   OUR_NOTES_LIVE_GEOMETRY,
@@ -366,6 +367,8 @@ function makeMaterial(
 /** Slide/guide ribbon mesh rendered with the selected native gradient. */
 export class HoldRibbonLayer {
   readonly group = new Group();
+  /** Practice visibility by distance (visibility.ts), along each ribbon; null is the game's own. */
+  visibility: NoteVisibility | null = null;
 
   private readonly projector: StageProjector;
   private readonly assets: OurNotesAssetManifest;
@@ -692,7 +695,7 @@ export class HoldRibbonLayer {
     const y = this.projector.yAtViewProgress(viewProgress);
     const z = 0;
     const fade = approach <= 1 || NATIVE_FADE_RANGE <= 0 ? 1 : 1 - clamp01((approach - 1) / NATIVE_FADE_RANGE);
-    const alpha = opacity * fade;
+    const alpha = opacity * fade * visibilityAt(this.visibility, approach);
     for (let column = 0; column < RIBBON_COLUMNS; column += 1) {
       const vertex = sampleIndex * RIBBON_COLUMNS + column;
       const positionOffset = vertex * RIBBON_VERTEX_STRIDE;
